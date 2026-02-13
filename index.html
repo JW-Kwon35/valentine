@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Will you be my Valentine?</title>
+  <style>
+    :root{
+      --bg1:#ff9a9e;
+      --bg2:#fad0c4;
+      --card:#ffffffcc;
+      --text:#2b2b2b;
+      --shadow: 0 20px 60px rgba(0,0,0,.18);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(1000px 700px at 80% 20%, rgba(255,255,255,.45), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    /* subtle floating hearts in background */
+    .bg-heart{
+      position:fixed;
+      top:110vh;
+      left:0;
+      font-size:18px;
+      opacity:.18;
+      filter: blur(.1px);
+      animation: floatUp linear forwards;
+      pointer-events:none;
+      user-select:none;
+    }
+    @keyframes floatUp{
+      from { transform: translateY(0) translateX(0) rotate(0deg); }
+      to   { transform: translateY(-140vh) translateX(var(--drift)) rotate(18deg); }
+    }
+
+    main.card{
+      width:min(520px, 92vw);
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.55);
+      backdrop-filter: blur(10px);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+      padding:28px 22px;
+      text-align:center;
+      position:relative;
+    }
+
+    .badge{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.7);
+      border:1px solid rgba(0,0,0,.06);
+      font-size:13px;
+      margin-bottom:14px;
+    }
+
+    h1{
+      margin:8px 0 8px;
+      font-size:clamp(26px, 4.5vw, 38px);
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+    p#subtitle{
+      margin:0 auto 18px;
+      font-size:15px;
+      line-height:1.5;
+      opacity:.92;
+      max-width:42ch;
+      min-height:48px;
+    }
+
+    .buttons{
+      position:relative;
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      padding:14px 0 6px;
+      min-height:64px;
+    }
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius:16px;
+      padding:14px 18px;
+      font-weight:800;
+      font-size:16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.12);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+
+    #yesBtn{
+      background: linear-gradient(180deg, #ff4d6d, #ff2d55);
+      color:white;
+      transform: scale(1);
+    }
+    #yesBtn:hover{ filter: brightness(1.02); }
+
+    #noBtn{
+      background: rgba(255,255,255,.9);
+      color:#1f1f1f;
+      border:1px solid rgba(0,0,0,.08);
+      position:relative; /* will switch to fixed when it starts running */
+    }
+
+    .row{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .secondary{
+      background: rgba(255,255,255,.75);
+      border:1px solid rgba(0,0,0,.08);
+      color:#333;
+      box-shadow:none;
+      font-weight:700;
+      padding:10px 14px;
+      border-radius:14px;
+      font-size:14px;
+    }
+
+    /* celebration overlay */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      place-items:center;
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(5px);
+      z-index:50;
+      padding:22px;
+    }
+    .overlay.show{ display:grid; }
+    .modal{
+      width:min(520px, 92vw);
+      background: rgba(255,255,255,.92);
+      border-radius:26px;
+      box-shadow: var(--shadow);
+      padding:26px 20px;
+      text-align:center;
+      border:1px solid rgba(0,0,0,.06);
+    }
+    .modal h2{
+      margin:8px 0 6px;
+      font-size:clamp(22px, 4vw, 30px);
+    }
+    .modal p{
+      margin:0 auto 14px;
+      opacity:.9;
+      line-height:1.6;
+      max-width:46ch;
+    }
+
+    /* confetti hearts */
+    .confetti{
+      position:fixed;
+      top:-30px;
+      left:0;
+      pointer-events:none;
+      user-select:none;
+      animation: fall var(--dur) linear forwards;
+      transform: translateX(var(--x)) rotate(var(--rot));
+      font-size: var(--size);
+      opacity: var(--op);
+      z-index:60;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+    }
+    @keyframes fall{
+      to { top:110vh; transform: translateX(var(--x)) rotate(calc(var(--rot) + 25deg)); }
+    }
+
+    /* tiny footer note */
+    .note{
+      margin-top:10px;
+      font-size:12px;
+      opacity:.72;
+    }
+
+    @media (max-width: 380px){
+      button{ padding:13px 14px; }
+      .buttons{ gap:10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" aria-live="polite">
+    <div class="badge">💌 <span id="badgeText">valentine mode</span></div>
+    <h1 id="title">Will you be my Valentine? 💘</h1>
+    <p id="subtitle">대답은… Yes 아니면 No! (근데 No는 좀 부끄럼이 많아 🏃‍♂️)</p>
+
+    <div class="buttons" id="btnArea">
+      <button id="yesBtn" type="button">Yes 💗</button>
+      <button id="noBtn" type="button">No 🙈</button>
+    </div>
+
+    <div class="row">
+      <button class="secondary" id="copyBtn" type="button">🔗 링크 복사</button>
+      <button class="secondary" id="resetBtn" type="button">↩︎ 리셋</button>
+    </div>
+
+    <div class="note">* 장난은 장난으로! 충분히 친한 사이에만 😇</div>
+  </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div style="font-size:42px; line-height:1;">💖</div>
+      <h2 id="modalTitle">Yay!!!</h2>
+      <p id="modalText">올해 발렌타인은 우리 거다 🥰</p>
+      <div class="row">
+        <button id="closeBtn" type="button">닫기</button>
+        <button class="secondary" id="copyBtn2" type="button">🔗 링크 복사</button>
+      </div>
+    </div>
+  </div>
+
+    <script>
+    // --- Personalization via query params ---
+    // Example: index.html?to=민지&from=준호
+    const params = new URLSearchParams(location.search);
+    const toName = (params.get("to") || params.get("name") || "").trim();
+    const fromName = (params.get("from") || "").trim();
+
+    const titleEl = document.getElementById("title");
+    const badgeEl = document.getElementById("badgeText");
+    if (toName && fromName){
+      titleEl.textContent = `${toName}아(야), ${fromName}의 발렌타인이 되어줄래? 💘`;
+      badgeEl.textContent = `to ${toName} · from ${fromName}`;
+    } else if (toName){
+      titleEl.textContent = `${toName}아(야), 내 발렌타인이 되어줄래? 💘`;
+      badgeEl.textContent = `to ${toName}`;
+    } else {
+      badgeEl.textContent = `shareable link inside`;
+    }
+
+    const subtitle = document.getElementById("subtitle");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn  = document.getElementById("noBtn");
+    const btnArea = document.getElementById("btnArea");
+
+    const overlay = document.getElementById("overlay");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalText  = document.getElementById("modalText");
+    const closeBtn = document.getElementById("closeBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const copyBtn2 = document.getElementById("copyBtn2");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let noAttempts = 0;
+    const MAX_NO = 10;
+    let noIsRunning = true;
+    let lastMoveAt = 0;
+
+    const lines = [
+      "진짜로 No…? 🥺",
+      "한 번만 더 생각해주면 안 돼? 💗",
+      "내가 간식 사줄게… 🍫",
+      "여기까지 왔는데… 제발… 🙏",
+      "심장이 쪼개지는 중… 💔",
+      "오케이… 그래도 난 포기 못 해… 😤",
+      "조금만 더! (7번째야) 🫣",
+      "이건 거의 운명이야… (8번째) 🧲",
+      "진짜 마지막 직전… (9번째) 😳",
+      "라스트! 진짜 라스트! (10번째) 🥹",
+    ];
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function setYesScale(){
+      const s = clamp(1 + noAttempts * 0.12, 1, 1.9);
+      yesBtn.style.transform = `scale(${s})`;
+      yesBtn.style.boxShadow = `0 ${10 + s*3}px ${20 + s*10}px rgba(0,0,0,.14)`;
+    }
+
+    // --- iOS Safari fix: Don't keep a fixed-position button inside backdrop-filter card.
+    // We'll "portal" the No button to <body> when it starts moving, and leave a placeholder in its original spot.
+    function ensureNoPortal(){
+      if (noBtn.dataset.portaled === "1") return;
+
+      const rect = noBtn.getBoundingClientRect();
+      const ph = document.createElement("span");
+      ph.id = "noPlaceholder";
+      ph.style.display = "inline-block";
+      ph.style.width = rect.width + "px";
+      ph.style.height = rect.height + "px";
+      ph.style.verticalAlign = "middle";
+      // keep layout spacing similar
+      const cs = getComputedStyle(noBtn);
+      ph.style.margin = cs.margin;
+
+      noBtn.parentNode.insertBefore(ph, noBtn);
+      document.body.appendChild(noBtn);
+
+      noBtn.dataset.portaled = "1";
+      noBtn.style.position = "fixed";
+      noBtn.style.margin = "0";
+      noBtn.style.zIndex = "40"; // overlay is 50
+    }
+
+    function returnNoToCard(){
+      const ph = document.getElementById("noPlaceholder");
+      if (ph && ph.parentNode){
+        ph.parentNode.insertBefore(noBtn, ph);
+        ph.remove();
+      } else {
+        btnArea.appendChild(noBtn);
+      }
+
+      noBtn.dataset.portaled = "";
+      noBtn.style.position = "relative";
+      noBtn.style.left = "";
+      noBtn.style.top  = "";
+      noBtn.style.margin = "";
+      noBtn.style.zIndex = "";
+    }
+
+    function viewportBox(){
+      const vv = window.visualViewport;
+      if (vv){
+        return { left: vv.offsetLeft, top: vv.offsetTop, width: vv.width, height: vv.height };
+      }
+      return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    }
+
+    function moveNoButton(){
+      if (!noIsRunning) return;
+
+      const now = performance.now();
+      if (now - lastMoveAt < 90) return; // throttle a bit
+      lastMoveAt = now;
+
+      ensureNoPortal();
+
+      const rect = noBtn.getBoundingClientRect();
+      const pad = 12;
+      const vp = viewportBox();
+
+      let minX = vp.left + pad;
+      let minY = vp.top + pad;
+      let maxX = vp.left + vp.width  - rect.width  - pad;
+      let maxY = vp.top  + vp.height - rect.height - pad;
+
+      if (maxX < minX) maxX = minX;
+      if (maxY < minY) maxY = minY;
+
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top  = y + "px";
+    }
+
+    // subtle floating hearts in background
+    function backgroundHearts(){
+      const emojis = ["💗","💖","💘","💕","❤️"];
+      const heart = document.createElement("div");
+      heart.className = "bg-heart";
+      heart.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      heart.style.left = (Math.random() * 100) + "vw";
+      heart.style.setProperty("--drift", (Math.random()*40 - 20) + "vw");
+      heart.style.animationDuration = (8 + Math.random()*8) + "s";
+      heart.style.fontSize = (14 + Math.random()*18) + "px";
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 17000);
+    }
+    setInterval(backgroundHearts, 700);
+
+    function confettiHearts(count=42){
+      const emojis = ["💗","💖","💘","💕","❤️"];
+      for (let i=0; i<count; i++){
+        const c = document.createElement("div");
+        c.className = "confetti";
+        c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+        const x = Math.random() * 100;
+        const dur = 2.8 + Math.random()*2.6;
+        const size = (16 + Math.random()*26) + "px";
+        const rot = (Math.random()*60 - 30) + "deg";
+        const op = (0.65 + Math.random()*0.35).toFixed(2);
+
+        c.style.setProperty("--x", x + "vw");
+        c.style.setProperty("--dur", dur + "s");
+        c.style.setProperty("--size", size);
+        c.style.setProperty("--rot", rot);
+        c.style.setProperty("--op", op);
+
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), (dur*1000) + 400);
+      }
+    }
+
+    function showYes(){
+      const who = toName || "너";
+      overlay.classList.add("show");
+      modalTitle.textContent = "Yay!!! 💞";
+      modalText.textContent = `${who}랑 함께라서 완전 행복해 🥰`;
+      confettiHearts(55);
+    }
+
+    function showNo(){
+      const who = toName || "너";
+      overlay.classList.add("show");
+      modalTitle.textContent = "알겠어 😌";
+      modalText.textContent = `${who}의 마음도 존중할게. 그래도 고마워!`;
+    }
+
+    // ✅ Unified No behavior:
+    // - Count exactly 10 clicks
+    // - Move AFTER the click (so it never "runs away" before you can click on mobile)
+    // - After 10, it stops running and acts as real "No"
+    noBtn.addEventListener("click", () => {
+      if (!noIsRunning && noAttempts >= MAX_NO){
+        showNo();
+        return;
+      }
+
+      noAttempts++;
+      subtitle.textContent = lines[Math.min(noAttempts - 1, lines.length - 1)];
+      setYesScale();
+
+      if (noAttempts >= MAX_NO){
+        noIsRunning = false;
+        subtitle.textContent = "오케이. 진짜 No도 존중할게. (이제 No 버튼 안 도망감) 🙂";
+        returnNoToCard();
+        return;
+      }
+
+      moveNoButton();
+    });
+
+    yesBtn.addEventListener("click", showYes);
+
+    function buildShareURL(){
+      const url = new URL(location.href);
+      if (toName) url.searchParams.set("to", toName);
+      if (fromName) url.searchParams.set("from", fromName);
+      return url.toString();
+    }
+
+    async function copyLink(){
+      const shareUrl = buildShareURL();
+      try{
+        await navigator.clipboard.writeText(shareUrl);
+        subtitle.textContent = "링크 복사 완료! 이제 그 사람에게 보내면 됨 😎";
+      }catch{
+        window.prompt("복사해서 보내기:", shareUrl);
+      }
+    }
+
+    copyBtn.addEventListener("click", copyLink);
+    copyBtn2.addEventListener("click", copyLink);
+
+    closeBtn.addEventListener("click", () => overlay.classList.remove("show"));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.classList.remove("show");
+    });
+
+    resetBtn.addEventListener("click", () => {
+      noAttempts = 0;
+      noIsRunning = true;
+      yesBtn.style.transform = "scale(1)";
+      yesBtn.style.boxShadow = "";
+      subtitle.textContent = "대답은… Yes 아니면 No! (근데 No는 좀 부끄럼이 많아 🏃‍♂️)";
+      returnNoToCard();
+    });
+
+    // Optional: if they explicitly type ?forceNo=1 to allow no immediately
+    if (params.get("forceNo") === "1"){
+      noIsRunning = false;
+      subtitle.textContent = "No도 가능! (forceNo=1)";
+    }
+  </script>
+</body>
+</html>
