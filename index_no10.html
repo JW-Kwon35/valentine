@@ -232,7 +232,7 @@
     </div>
   </div>
 
-  <script>
+    <script>
     // --- Personalization via query params ---
     // Example: index.html?to=민지&from=준호
     const params = new URLSearchParams(location.search);
@@ -254,6 +254,8 @@
     const subtitle = document.getElementById("subtitle");
     const yesBtn = document.getElementById("yesBtn");
     const noBtn  = document.getElementById("noBtn");
+    const btnArea = document.getElementById("btnArea");
+
     const overlay = document.getElementById("overlay");
     const modalTitle = document.getElementById("modalTitle");
     const modalText  = document.getElementById("modalText");
@@ -265,12 +267,7 @@
     let noAttempts = 0;
     const MAX_NO = 10;
     let noIsRunning = true;
-
-    // "No" 버튼이 화면 밖으로 사라지는 문제를 막기 위해,
-    // 한번이라도 도망치기 시작하면 버튼을 <body>로 잠깐 옮겨서(fixed) 움직입니다.
-    const btnArea = document.getElementById("btnArea");
-    let noDetached = false;
-    const noSlot = document.createElement("span"); // 원래 자리 유지용 placeholder
+    let lastMoveAt = 0;
 
     const lines = [
       "진짜로 No…? 🥺",
@@ -293,77 +290,91 @@
       yesBtn.style.boxShadow = `0 ${10 + s*3}px ${20 + s*10}px rgba(0,0,0,.14)`;
     }
 
-    function detachNoIfNeeded(){
-      if (noDetached) return;
+    // --- iOS Safari fix: Don't keep a fixed-position button inside backdrop-filter card.
+    // We'll "portal" the No button to <body> when it starts moving, and leave a placeholder in its original spot.
+    function ensureNoPortal(){
+      if (noBtn.dataset.portaled === "1") return;
 
       const rect = noBtn.getBoundingClientRect();
-      // placeholder 크기 고정 (레이아웃 유지)
-      noSlot.style.display = "inline-block";
-      noSlot.style.width = rect.width + "px";
-      noSlot.style.height = rect.height + "px";
+      const ph = document.createElement("span");
+      ph.id = "noPlaceholder";
+      ph.style.display = "inline-block";
+      ph.style.width = rect.width + "px";
+      ph.style.height = rect.height + "px";
+      ph.style.verticalAlign = "middle";
+      // keep layout spacing similar
+      const cs = getComputedStyle(noBtn);
+      ph.style.margin = cs.margin;
 
-      // noBtn을 placeholder로 교체 후 body로 이동
-      btnArea.replaceChild(noSlot, noBtn);
+      noBtn.parentNode.insertBefore(ph, noBtn);
       document.body.appendChild(noBtn);
 
+      noBtn.dataset.portaled = "1";
       noBtn.style.position = "fixed";
-      noBtn.style.left = rect.left + "px";
-      noBtn.style.top  = rect.top + "px";
       noBtn.style.margin = "0";
-      noBtn.style.zIndex = "40";
-
-      noDetached = true;
+      noBtn.style.zIndex = "40"; // overlay is 50
     }
 
-    function restoreNoToButtons(){
-      if (!noDetached) return;
+    function returnNoToCard(){
+      const ph = document.getElementById("noPlaceholder");
+      if (ph && ph.parentNode){
+        ph.parentNode.insertBefore(noBtn, ph);
+        ph.remove();
+      } else {
+        btnArea.appendChild(noBtn);
+      }
 
-      // 원래 자리로 복귀
-      btnArea.replaceChild(noBtn, noSlot);
-
-      // 스타일 초기화
+      noBtn.dataset.portaled = "";
       noBtn.style.position = "relative";
       noBtn.style.left = "";
       noBtn.style.top  = "";
       noBtn.style.margin = "";
       noBtn.style.zIndex = "";
+    }
 
-      noDetached = false;
+    function viewportBox(){
+      const vv = window.visualViewport;
+      if (vv){
+        return { left: vv.offsetLeft, top: vv.offsetTop, width: vv.width, height: vv.height };
+      }
+      return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
     }
 
     function moveNoButton(){
       if (!noIsRunning) return;
 
-      detachNoIfNeeded();
+      const now = performance.now();
+      if (now - lastMoveAt < 90) return; // throttle a bit
+      lastMoveAt = now;
 
-      // iOS 주소창(visualViewport) 변동에도 화면 안쪽에만 머무르게
+      ensureNoPortal();
+
       const rect = noBtn.getBoundingClientRect();
-      const vv = window.visualViewport;
-      const vw = vv ? vv.width : window.innerWidth;
-      const vh = vv ? vv.height : window.innerHeight;
-      const ox = vv ? vv.offsetLeft : 0;
-      const oy = vv ? vv.offsetTop  : 0;
+      const pad = 12;
+      const vp = viewportBox();
 
-      const padding = 12;
-      const minX = ox + padding;
-      const minY = oy + padding;
-      const maxX = ox + vw - rect.width  - padding;
-      const maxY = oy + vh - rect.height - padding;
+      let minX = vp.left + pad;
+      let minY = vp.top + pad;
+      let maxX = vp.left + vp.width  - rect.width  - pad;
+      let maxY = vp.top  + vp.height - rect.height - pad;
 
-      const x = (maxX <= minX) ? minX : (Math.random() * (maxX - minX) + minX);
-      const y = (maxY <= minY) ? minY : (Math.random() * (maxY - minY) + minY);
+      if (maxX < minX) maxX = minX;
+      if (maxY < minY) maxY = minY;
+
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
 
       noBtn.style.left = x + "px";
       noBtn.style.top  = y + "px";
     }
 
+    // subtle floating hearts in background
     function backgroundHearts(){
       const emojis = ["💗","💖","💘","💕","❤️"];
       const heart = document.createElement("div");
       heart.className = "bg-heart";
       heart.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      const x = Math.random() * 100;
-      heart.style.left = x + "vw";
+      heart.style.left = (Math.random() * 100) + "vw";
       heart.style.setProperty("--drift", (Math.random()*40 - 20) + "vw");
       heart.style.animationDuration = (8 + Math.random()*8) + "s";
       heart.style.fontSize = (14 + Math.random()*18) + "px";
@@ -410,34 +421,33 @@
       modalText.textContent = `${who}의 마음도 존중할게. 그래도 고마워!`;
     }
 
-    // --- Viral interactions ---
-    // iOS에서 "pointerdown으로 먼저 움직여서 클릭이 안 되는" 현상을 피하려고,
-    // No 버튼은 "클릭 성공 후"에만 도망가게 처리합니다. (그래서 10번은 확실히 누를 수 있음)
-    function handleNoClick(){
-      // 10번 다 누른 뒤에는 '진짜 No' 처리
+    // ✅ Unified No behavior:
+    // - Count exactly 10 clicks
+    // - Move AFTER the click (so it never "runs away" before you can click on mobile)
+    // - After 10, it stops running and acts as real "No"
+    noBtn.addEventListener("click", () => {
       if (!noIsRunning && noAttempts >= MAX_NO){
         showNo();
         return;
       }
 
-      // 1~10번째까지 카운트
-      noAttempts = Math.min(noAttempts + 1, MAX_NO);
+      noAttempts++;
       subtitle.textContent = lines[Math.min(noAttempts - 1, lines.length - 1)];
       setYesScale();
 
       if (noAttempts >= MAX_NO){
         noIsRunning = false;
-        subtitle.textContent = "오케이. No 10번이면 인정! (이제 No 버튼 안 도망감) 🙂";
-        restoreNoToButtons();
+        subtitle.textContent = "오케이. 진짜 No도 존중할게. (이제 No 버튼 안 도망감) 🙂";
+        returnNoToCard();
         return;
       }
 
       moveNoButton();
-    }
+    });
 
-    noBtn.addEventListener("click", handleNoClick);
     yesBtn.addEventListener("click", showYes);
-function buildShareURL(){
+
+    function buildShareURL(){
       const url = new URL(location.href);
       if (toName) url.searchParams.set("to", toName);
       if (fromName) url.searchParams.set("from", fromName);
@@ -450,7 +460,6 @@ function buildShareURL(){
         await navigator.clipboard.writeText(shareUrl);
         subtitle.textContent = "링크 복사 완료! 이제 그 사람에게 보내면 됨 😎";
       }catch{
-        // fallback prompt
         window.prompt("복사해서 보내기:", shareUrl);
       }
     }
@@ -466,21 +475,15 @@ function buildShareURL(){
     resetBtn.addEventListener("click", () => {
       noAttempts = 0;
       noIsRunning = true;
-
-      // No 버튼이 화면 어딘가로 떠있던 상태면 원래 자리로 돌려놓기
-      restoreNoToButtons();
-
       yesBtn.style.transform = "scale(1)";
       yesBtn.style.boxShadow = "";
       subtitle.textContent = "대답은… Yes 아니면 No! (근데 No는 좀 부끄럼이 많아 🏃‍♂️)";
+      returnNoToCard();
     });
 
     // Optional: if they explicitly type ?forceNo=1 to allow no immediately
     if (params.get("forceNo") === "1"){
-      // 즉시 "No"를 허용: No 버튼은 도망가지 않음 + 누르면 바로 showNo()
       noIsRunning = false;
-      noAttempts = MAX_NO;
-      restoreNoToButtons();
       subtitle.textContent = "No도 가능! (forceNo=1)";
     }
   </script>
