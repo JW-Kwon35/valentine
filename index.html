@@ -137,8 +137,7 @@
       inset:0;
       display:none;
       place-items:center;
-      background: rgba(0,0,0,.18);
-      backdrop-filter: blur(5px);
+      background: rgba(0,0,0,.28);
       z-index:50;
       padding:22px;
     }
@@ -165,12 +164,11 @@
 
     .confetti{
       position:fixed;
-      top:-30px;
+      top:0;
       left:0;
       pointer-events:none;
       user-select:none;
       z-index:60;
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
     }
 
     .note{
@@ -577,37 +575,50 @@
     }
     setInterval(backgroundHearts, 700);
 
-    function confettiHearts(count=42){
+    function confettiHearts(count=30){
       const emojis = ["💗","💖","💘","💕","❤️"];
+      const vh = window.innerHeight;
+      const particles = [];
+
       for (let i=0; i<count; i++){
         const c = document.createElement("div");
         c.className = "confetti";
         c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-
-        const xVw = Math.random() * 100;
-        const dur = 2800 + Math.random()*2600;
-        const size = 16 + Math.random()*26;
-        const rotStart = Math.random()*60 - 30;
-        const op = 0.65 + Math.random()*0.35;
-
-        c.style.left = xVw + "vw";
-        c.style.fontSize = size + "px";
-        c.style.opacity = op;
-
+        c.style.fontSize = (16 + Math.random()*26) + "px";
+        c.style.opacity = (0.65 + Math.random()*0.35).toFixed(2);
+        c.style.willChange = "transform";
         document.body.appendChild(c);
 
-        const startTime = performance.now();
-        function tick(now){
-          const p = Math.min((now - startTime) / dur, 1);
-          const top = -30 + (window.innerHeight * 1.1 + 30) * p;
-          const rot = rotStart + 25 * p;
-          c.style.top = top + "px";
-          c.style.transform = `rotate(${rot}deg)`;
-          if (p < 1) requestAnimationFrame(tick);
-          else c.remove();
-        }
-        requestAnimationFrame(tick);
+        particles.push({
+          el: c,
+          x: Math.random() * window.innerWidth,
+          startY: -30 - Math.random()*40,
+          endY: vh * 1.1,
+          rot0: Math.random()*60 - 30,
+          dur: 2800 + Math.random()*2600,
+          born: performance.now()
+        });
       }
+
+      function tick(now){
+        let alive = false;
+        for (let i=0; i<particles.length; i++){
+          const p = particles[i];
+          if (!p) continue;
+          const t = Math.min((now - p.born) / p.dur, 1);
+          if (t < 1){
+            alive = true;
+            const y = p.startY + (p.endY - p.startY) * t;
+            const r = p.rot0 + 25 * t;
+            p.el.style.transform = `translate3d(${p.x}px,${y}px,0) rotate(${r}deg)`;
+          } else {
+            p.el.remove();
+            particles[i] = null;
+          }
+        }
+        if (alive) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
     }
 
     // ============================================================
@@ -769,7 +780,7 @@
         msg += `\n📮 주소도 잘 받았어!`;
       }
       modalText.textContent = msg;
-      confettiHearts(55);
+      confettiHearts(30);
     }
 
     function showNo(){
