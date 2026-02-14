@@ -28,7 +28,6 @@
       padding:24px;
     }
 
-    /* subtle floating hearts in background */
     .bg-heart{
       position:fixed;
       top:110vh;
@@ -117,7 +116,7 @@
       background: rgba(255,255,255,.9);
       color:#1f1f1f;
       border:1px solid rgba(0,0,0,.08);
-      position:relative; /* will switch to fixed when it starts running */
+      position:relative;
     }
 
     .row{
@@ -138,7 +137,6 @@
       font-size:14px;
     }
 
-    /* celebration overlay */
     .overlay{
       position:fixed;
       inset:0;
@@ -170,7 +168,6 @@
       max-width:46ch;
     }
 
-    /* confetti hearts */
     .confetti{
       position:fixed;
       top:-30px;
@@ -188,12 +185,100 @@
       to { top:110vh; transform: translateX(var(--x)) rotate(calc(var(--rot) + 25deg)); }
     }
 
-    /* tiny footer note */
     .note{
       margin-top:10px;
       font-size:12px;
       opacity:.72;
     }
+
+    #commentOverlay{ z-index:70; }
+    #commentInput{
+      width:100%;
+      min-height:110px;
+      resize:none;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(0,0,0,.12);
+      background: rgba(255,255,255,.85);
+      font-size:14px;
+      line-height:1.5;
+      outline:none;
+      margin-top:8px;
+    }
+    #commentInput:focus{
+      border-color: rgba(255,45,85,.45);
+      box-shadow: 0 0 0 3px rgba(255,45,85,.12);
+    }
+
+    /* flower overlay */
+    #flowerOverlay{ z-index:72; }
+    .flower-btn-yes{
+      background: linear-gradient(180deg, #ff4d6d, #ff2d55);
+      color:white;
+    }
+    .flower-btn-no{
+      background: rgba(255,255,255,.9);
+      color:#1f1f1f;
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    /* address overlay */
+    #addressOverlay{ z-index:74; }
+    #addressInput{
+      width:100%;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid rgba(0,0,0,.12);
+      background: rgba(255,255,255,.85);
+      font-size:15px;
+      line-height:1.5;
+      outline:none;
+      margin-top:8px;
+    }
+    #addressInput:focus{
+      border-color: rgba(255,45,85,.45);
+      box-shadow: 0 0 0 3px rgba(255,45,85,.12);
+    }
+
+    #adminPanel{
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px dashed rgba(0,0,0,.12);
+      text-align:left;
+    }
+    #adminPanel h2{
+      margin:0 0 8px;
+      font-size:18px;
+      text-align:center;
+    }
+    .adminTableWrap{
+      margin-top:10px;
+      max-height:280px;
+      overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(0,0,0,.08);
+      background: rgba(255,255,255,.65);
+    }
+    #adminTable{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    #adminTable th, #adminTable td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      vertical-align:top;
+      word-break:break-word;
+    }
+    #adminTable th{
+      position:sticky;
+      top:0;
+      background: rgba(255,255,255,.92);
+      border-bottom:1px solid rgba(0,0,0,.08);
+      text-align:left;
+      font-weight:800;
+    }
+    #adminTable tbody tr:last-child td{ border-bottom:0; }
 
     @media (max-width: 380px){
       button{ padding:13px 14px; }
@@ -212,14 +297,47 @@
       <button id="noBtn" type="button">No 🙈</button>
     </div>
 
-    <div class="row">
+    <div class="row" id="actionRow">
       <button class="secondary" id="copyBtn" type="button">🔗 링크 복사</button>
       <button class="secondary" id="resetBtn" type="button">↩︎ 리셋</button>
     </div>
 
-    <div class="note">* 장난은 장난으로! 충분히 친한 사이에만 😇</div>
+    <div class="note" id="footerNote">* 장난은 장난으로! 충분히 친한 사이에만 😇</div>
+
+    <section id="adminPanel" hidden>
+      <h2>📋 응답 보기</h2>
+      <p class="note" style="margin-top:0; opacity:.85;">
+        * 이 화면은 만든 사람(보낸 사람)용. URL에 <b>admin=1</b>을 붙이면 열려요.
+      </p>
+
+      <div class="row" style="margin-top:6px;">
+        <button class="secondary" id="refreshBtn" type="button">↻ 새로고침</button>
+        <button class="secondary" id="copyAdminBtn" type="button">🔒 결과 링크 복사</button>
+      </div>
+
+      <div id="adminStatus" class="note" style="margin-top:8px; min-height:18px;"></div>
+
+      <div class="adminTableWrap">
+        <table id="adminTable" aria-label="responses">
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>상대</th>
+              <th>선택</th>
+              <th>꽃</th>
+              <th>주소</th>
+              <th>코멘트</th>
+            </tr>
+          </thead>
+          <tbody id="adminTbody">
+            <tr><td colspan="6" style="padding:12px;">admin=1로 열면 여기 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
+  <!-- Final celebration overlay -->
   <div class="overlay" id="overlay" role="dialog" aria-modal="true">
     <div class="modal">
       <div style="font-size:42px; line-height:1;">💖</div>
@@ -227,18 +345,67 @@
       <p id="modalText">올해 발렌타인은 우리 거다 🥰</p>
       <div class="row">
         <button id="closeBtn" type="button">닫기</button>
-        <button class="secondary" id="copyBtn2" type="button">🔗 링크 복사</button>
+        <button class="secondary" id="copyBtn2" type="button">🔗 결과 공유하기</button>
+      </div>
+      <div class="note" id="shareStatus" style="min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- Comment overlay -->
+  <div class="overlay" id="commentOverlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div style="font-size:42px; line-height:1;">📝</div>
+      <h2 id="commentTitle">한마디 남겨줘!</h2>
+      <p id="commentDesc">선택한 이유나 하고 싶은 말을 적어줘 😊</p>
+      <textarea id="commentInput" maxlength="200" placeholder="(최대 200자)"></textarea>
+      <div class="row" style="margin-top:12px;">
+        <button id="submitCommentBtn" type="button">보내기</button>
+        <button class="secondary" id="skipCommentBtn" type="button">코멘트 없이</button>
+      </div>
+      <div class="note" id="sendStatus" style="min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- Flower question overlay -->
+  <div class="overlay" id="flowerOverlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div style="font-size:52px; line-height:1;">💐</div>
+      <h2 id="flowerTitle">그럼에도 꽃은 받아줄 거지?</h2>
+      <p id="flowerDesc">발렌타인 꽃다발, 받아줄래? 🌹</p>
+      <div class="row" style="margin-top:14px;">
+        <button class="flower-btn-yes" id="flowerYesBtn" type="button">받을게! 🌷</button>
+        <button class="flower-btn-no" id="flowerNoBtn" type="button">꽃은 괜찮아 😅</button>
       </div>
     </div>
   </div>
 
-    <script>
+  <!-- Address input overlay -->
+  <div class="overlay" id="addressOverlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div style="font-size:42px; line-height:1;">📮</div>
+      <h2>주소를 입력하시겠습니까?</h2>
+      <p>꽃을 보내드릴 주소를 알려줘! 🚀</p>
+      <input type="text" id="addressInput" placeholder="예) 서울시 강남구 테헤란로 123" />
+      <div class="row" style="margin-top:14px;">
+        <button id="addressSubmitBtn" type="button">입력 📬</button>
+        <button class="secondary" id="addressCancelBtn" type="button">취소</button>
+      </div>
+      <div class="note" id="addressStatus" style="min-height:18px;"></div>
+    </div>
+  </div>
+
+  <script>
     // --- Personalization via query params ---
-    // Example: index.html?to=민지&from=준호
     const params = new URLSearchParams(location.search);
     const toName = (params.get("to") || params.get("name") || "").trim();
     const fromName = (params.get("from") || "").trim();
 
+    // --- 저장(결과 보기) 기능 설정 ---
+    const ENDPOINT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+    const ADMIN_MODE = params.get("admin") === "1";
+    const ADMIN_KEY  = (params.get("k") || "").trim();
+
+    // --- DOM refs ---
     const titleEl = document.getElementById("title");
     const badgeEl = document.getElementById("badgeText");
     if (toName && fromName){
@@ -251,23 +418,56 @@
       badgeEl.textContent = `shareable link inside`;
     }
 
-    const subtitle = document.getElementById("subtitle");
-    const yesBtn = document.getElementById("yesBtn");
-    const noBtn  = document.getElementById("noBtn");
-    const btnArea = document.getElementById("btnArea");
+    const subtitle    = document.getElementById("subtitle");
+    const yesBtn      = document.getElementById("yesBtn");
+    const noBtn       = document.getElementById("noBtn");
+    const btnArea     = document.getElementById("btnArea");
 
-    const overlay = document.getElementById("overlay");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalText  = document.getElementById("modalText");
-    const closeBtn = document.getElementById("closeBtn");
-    const copyBtn = document.getElementById("copyBtn");
-    const copyBtn2 = document.getElementById("copyBtn2");
-    const resetBtn = document.getElementById("resetBtn");
+    const overlay     = document.getElementById("overlay");
+    const modalTitle  = document.getElementById("modalTitle");
+    const modalText   = document.getElementById("modalText");
+    const closeBtn    = document.getElementById("closeBtn");
+    const copyBtn     = document.getElementById("copyBtn");
+    const copyBtn2    = document.getElementById("copyBtn2");
+    const resetBtn    = document.getElementById("resetBtn");
 
-    let noAttempts = 0;
-    const MAX_NO = 10;
+    const commentOverlay   = document.getElementById("commentOverlay");
+    const commentTitle     = document.getElementById("commentTitle");
+    const commentInput     = document.getElementById("commentInput");
+    const submitCommentBtn = document.getElementById("submitCommentBtn");
+    const skipCommentBtn   = document.getElementById("skipCommentBtn");
+    const sendStatus       = document.getElementById("sendStatus");
+
+    const flowerOverlay = document.getElementById("flowerOverlay");
+    const flowerTitle   = document.getElementById("flowerTitle");
+    const flowerDesc    = document.getElementById("flowerDesc");
+    const flowerYesBtn  = document.getElementById("flowerYesBtn");
+    const flowerNoBtn   = document.getElementById("flowerNoBtn");
+
+    const addressOverlay   = document.getElementById("addressOverlay");
+    const addressInput     = document.getElementById("addressInput");
+    const addressSubmitBtn = document.getElementById("addressSubmitBtn");
+    const addressCancelBtn = document.getElementById("addressCancelBtn");
+    const addressStatus    = document.getElementById("addressStatus");
+
+    const adminPanel   = document.getElementById("adminPanel");
+    const refreshBtn   = document.getElementById("refreshBtn");
+    const copyAdminBtn = document.getElementById("copyAdminBtn");
+    const adminStatus  = document.getElementById("adminStatus");
+    const adminTbody   = document.getElementById("adminTbody");
+    const actionRow    = document.getElementById("actionRow");
+    const footerNote   = document.getElementById("footerNote");
+
+    // --- State ---
+    let noAttempts  = 0;
+    const MAX_NO    = 10;
     let noIsRunning = true;
-    let lastMoveAt = 0;
+    let lastMoveAt  = 0;
+
+    let selectedChoice   = null;
+    let collectedComment = "";
+    let collectedFlower  = null;   // "yes" | "no"
+    let collectedAddress = "";
 
     const lines = [
       "진짜로 No…? 🥺",
@@ -282,7 +482,18 @@
       "라스트! 진짜 라스트! (10번째) 🥹",
     ];
 
+    // --- Helpers ---
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function endpointReady(){
+      return ENDPOINT_URL && /^https?:\/\//.test(ENDPOINT_URL) && !ENDPOINT_URL.includes("PASTE_YOUR");
+    }
+
+    function fmtKST(ts){
+      const d = new Date(ts);
+      if (isNaN(d)) return ts || "";
+      return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+    }
 
     function setYesScale(){
       const s = clamp(1 + noAttempts * 0.12, 1, 1.9);
@@ -290,11 +501,9 @@
       yesBtn.style.boxShadow = `0 ${10 + s*3}px ${20 + s*10}px rgba(0,0,0,.14)`;
     }
 
-    // --- iOS Safari fix: Don't keep a fixed-position button inside backdrop-filter card.
-    // We'll "portal" the No button to <body> when it starts moving, and leave a placeholder in its original spot.
+    // --- No button portal (iOS Safari fix) ---
     function ensureNoPortal(){
       if (noBtn.dataset.portaled === "1") return;
-
       const rect = noBtn.getBoundingClientRect();
       const ph = document.createElement("span");
       ph.id = "noPlaceholder";
@@ -302,17 +511,14 @@
       ph.style.width = rect.width + "px";
       ph.style.height = rect.height + "px";
       ph.style.verticalAlign = "middle";
-      // keep layout spacing similar
       const cs = getComputedStyle(noBtn);
       ph.style.margin = cs.margin;
-
       noBtn.parentNode.insertBefore(ph, noBtn);
       document.body.appendChild(noBtn);
-
       noBtn.dataset.portaled = "1";
       noBtn.style.position = "fixed";
       noBtn.style.margin = "0";
-      noBtn.style.zIndex = "40"; // overlay is 50
+      noBtn.style.zIndex = "40";
     }
 
     function returnNoToCard(){
@@ -323,7 +529,6 @@
       } else {
         btnArea.appendChild(noBtn);
       }
-
       noBtn.dataset.portaled = "";
       noBtn.style.position = "relative";
       noBtn.style.left = "";
@@ -334,41 +539,29 @@
 
     function viewportBox(){
       const vv = window.visualViewport;
-      if (vv){
-        return { left: vv.offsetLeft, top: vv.offsetTop, width: vv.width, height: vv.height };
-      }
+      if (vv) return { left: vv.offsetLeft, top: vv.offsetTop, width: vv.width, height: vv.height };
       return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
     }
 
     function moveNoButton(){
       if (!noIsRunning) return;
-
       const now = performance.now();
-      if (now - lastMoveAt < 90) return; // throttle a bit
+      if (now - lastMoveAt < 90) return;
       lastMoveAt = now;
-
       ensureNoPortal();
-
       const rect = noBtn.getBoundingClientRect();
       const pad = 12;
       const vp = viewportBox();
-
-      let minX = vp.left + pad;
-      let minY = vp.top + pad;
-      let maxX = vp.left + vp.width  - rect.width  - pad;
-      let maxY = vp.top  + vp.height - rect.height - pad;
-
+      let minX = vp.left + pad, minY = vp.top + pad;
+      let maxX = vp.left + vp.width - rect.width - pad;
+      let maxY = vp.top + vp.height - rect.height - pad;
       if (maxX < minX) maxX = minX;
       if (maxY < minY) maxY = minY;
-
-      const x = minX + Math.random() * (maxX - minX);
-      const y = minY + Math.random() * (maxY - minY);
-
-      noBtn.style.left = x + "px";
-      noBtn.style.top  = y + "px";
+      noBtn.style.left = (minX + Math.random() * (maxX - minX)) + "px";
+      noBtn.style.top  = (minY + Math.random() * (maxY - minY)) + "px";
     }
 
-    // subtle floating hearts in background
+    // --- Background hearts ---
     function backgroundHearts(){
       const emojis = ["💗","💖","💘","💕","❤️"];
       const heart = document.createElement("div");
@@ -391,18 +584,172 @@
         c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
         const x = Math.random() * 100;
         const dur = 2.8 + Math.random()*2.6;
-        const size = (16 + Math.random()*26) + "px";
-        const rot = (Math.random()*60 - 30) + "deg";
-        const op = (0.65 + Math.random()*0.35).toFixed(2);
-
         c.style.setProperty("--x", x + "vw");
         c.style.setProperty("--dur", dur + "s");
-        c.style.setProperty("--size", size);
-        c.style.setProperty("--rot", rot);
-        c.style.setProperty("--op", op);
-
+        c.style.setProperty("--size", (16 + Math.random()*26) + "px");
+        c.style.setProperty("--rot", (Math.random()*60 - 30) + "deg");
+        c.style.setProperty("--op", (0.65 + Math.random()*0.35).toFixed(2));
         document.body.appendChild(c);
         setTimeout(() => c.remove(), (dur*1000) + 400);
+      }
+    }
+
+    // ============================================================
+    //  FLOW:
+    //  1. Yes/No 선택
+    //  2. 코멘트 입력 (선택)
+    //  3. "꽃은 받아줄 거지?" (Yes / No)
+    //  4. Yes → 주소 입력 (입력 / 취소)
+    //     No  → 바로 최종
+    //  5. 최종 결과 저장 + 결과 공유하기 화면
+    // ============================================================
+
+    // --- Step 1: Comment ---
+    function openComment(choice){
+      selectedChoice = choice;
+      sendStatus.textContent = "";
+      commentInput.value = "";
+      commentTitle.textContent = choice === "yes" ? "Yes 선택! 💗" : "No 선택! 🙈";
+      commentOverlay.classList.add("show");
+      commentInput.focus({ preventScroll: true });
+    }
+    function closeComment(){ commentOverlay.classList.remove("show"); }
+
+    submitCommentBtn.addEventListener("click", () => {
+      collectedComment = commentInput.value.trim();
+      closeComment();
+      openFlowerQuestion();
+    });
+    skipCommentBtn.addEventListener("click", () => {
+      collectedComment = "";
+      closeComment();
+      openFlowerQuestion();
+    });
+    commentOverlay.addEventListener("click", (e) => {
+      if (e.target === commentOverlay) closeComment();
+    });
+
+    // --- Step 2: Flower question ---
+    function openFlowerQuestion(){
+      if (selectedChoice === "yes"){
+        flowerTitle.textContent = "그러면 꽃도 받아줄 거지? 💐";
+        flowerDesc.textContent = "발렌타인 꽃다발, 같이 받아줘! 🌹";
+      } else {
+        flowerTitle.textContent = "그래도 꽃은 받아줄 거지? 💐";
+        flowerDesc.textContent = "마음은 거절해도… 꽃 한 다발 어때? 🌷";
+      }
+      flowerOverlay.classList.add("show");
+    }
+    function closeFlower(){ flowerOverlay.classList.remove("show"); }
+
+    flowerYesBtn.addEventListener("click", () => {
+      collectedFlower = "yes";
+      closeFlower();
+      openAddressInput();          // 꽃 수락 → 주소 입력
+    });
+    flowerNoBtn.addEventListener("click", () => {
+      collectedFlower = "no";
+      closeFlower();
+      finalizeAll();               // 꽃 거절 → 바로 최종
+    });
+
+    // --- Step 3: Address input ---
+    function openAddressInput(){
+      addressInput.value = "";
+      addressStatus.textContent = "";
+      addressOverlay.classList.add("show");
+      addressInput.focus({ preventScroll: true });
+    }
+    function closeAddress(){ addressOverlay.classList.remove("show"); }
+
+    addressSubmitBtn.addEventListener("click", () => {
+      const addr = addressInput.value.trim();
+      if (!addr){
+        addressStatus.textContent = "주소를 입력해줘! ✏️";
+        return;
+      }
+      collectedAddress = addr;
+      closeAddress();
+      finalizeAll();
+    });
+    addressCancelBtn.addEventListener("click", () => {
+      collectedAddress = "";
+      closeAddress();
+      finalizeAll();
+    });
+
+    // --- Last finalized result (for sharing) ---
+    let finalResult = null;
+
+    // --- Step 4: Save + Final screen ---
+    async function finalizeAll(){
+      if (!selectedChoice) return;
+
+      // store for sharing
+      finalResult = {
+        choice: selectedChoice,
+        comment: collectedComment,
+        flower: collectedFlower,
+        address: collectedAddress,
+        to: toName || "",
+        from: fromName || ""
+      };
+
+      await saveResponse(selectedChoice, collectedComment, collectedFlower, collectedAddress);
+
+      if (selectedChoice === "yes") showYes();
+      else showNo();
+
+      // reset
+      selectedChoice   = null;
+      collectedComment = "";
+      collectedFlower  = null;
+      collectedAddress = "";
+    }
+
+    async function saveResponse(choice, comment, flower, address){
+      const payload = {
+        ts: new Date().toISOString(),
+        choice,
+        comment: comment || "",
+        flower: flower || "",
+        address: address || "",
+        to: toName || "",
+        from: fromName || "",
+        href: location.href.split("#")[0],
+        ua: navigator.userAgent || ""
+      };
+
+      if (!endpointReady()){
+        const msg = [
+          `선택: ${choice.toUpperCase()}`,
+          `코멘트: ${comment || "(없음)"}`,
+          `꽃 수락: ${flower === "yes" ? "받을게!" : "괜찮아"}`,
+          `주소: ${address || "(미입력)"}`,
+          "",
+          "(ENDPOINT_URL을 설정하면 자동 저장됩니다.)"
+        ].join("\n");
+        try{ await navigator.clipboard.writeText(msg); }
+        catch{ window.prompt("보낸 사람에게 복사해서 보내기:", msg); }
+        return;
+      }
+
+      try{
+        await fetch(ENDPOINT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }catch{
+        const msg = [
+          `선택: ${choice.toUpperCase()}`,
+          `코멘트: ${comment || "(없음)"}`,
+          `꽃 수락: ${flower === "yes" ? "받을게!" : "괜찮아"}`,
+          `주소: ${address || "(미입력)"}`,
+          "(전송 실패)"
+        ].join("\n");
+        try{ await navigator.clipboard.writeText(msg); }catch{}
       }
     }
 
@@ -421,39 +768,107 @@
       modalText.textContent = `${who}의 마음도 존중할게. 그래도 고마워!`;
     }
 
-    // ✅ Unified No behavior:
-    // - Count exactly 10 clicks
-    // - Move AFTER the click (so it never "runs away" before you can click on mobile)
-    // - After 10, it stops running and acts as real "No"
+    // --- No button ---
     noBtn.addEventListener("click", () => {
       if (!noIsRunning && noAttempts >= MAX_NO){
-        showNo();
+        openComment("no");
         return;
       }
-
       noAttempts++;
       subtitle.textContent = lines[Math.min(noAttempts - 1, lines.length - 1)];
       setYesScale();
-
       if (noAttempts >= MAX_NO){
         noIsRunning = false;
         subtitle.textContent = "오케이. 진짜 No도 존중할게. (이제 No 버튼 안 도망감) 🙂";
         returnNoToCard();
         return;
       }
-
       moveNoButton();
     });
 
-    yesBtn.addEventListener("click", showYes);
+    yesBtn.addEventListener("click", () => openComment("yes"));
 
+    // --- URL helpers ---
     function buildShareURL(){
       const url = new URL(location.href);
+      url.searchParams.delete("admin");
+      url.searchParams.delete("k");
       if (toName) url.searchParams.set("to", toName);
       if (fromName) url.searchParams.set("from", fromName);
       return url.toString();
     }
 
+    function buildAdminURL(){
+      const url = new URL(location.href);
+      url.searchParams.set("admin", "1");
+      if (fromName) url.searchParams.set("from", fromName);
+      if (ADMIN_KEY) url.searchParams.set("k", ADMIN_KEY);
+      return url.toString();
+    }
+
+    // --- Admin table ---
+    function renderResponses(rows){
+      adminTbody.innerHTML = "";
+      if (!rows || !rows.length){
+        adminTbody.innerHTML = '<tr><td colspan="6" style="padding:12px;">아직 응답이 없어요.</td></tr>';
+        return;
+      }
+      rows.sort((a,b) => (b.ts || "").localeCompare(a.ts || ""));
+      for (const r of rows){
+        const tr = document.createElement("tr");
+        const who     = r.to || r.who || "(이름 없음)";
+        const choice  = (r.choice || "").toLowerCase() === "yes" ? "Yes 💗" : "No 🙈";
+        const flower  = (r.flower || "").toLowerCase() === "yes" ? "받을게 🌹" : (r.flower === "no" ? "괜찮아 😅" : "—");
+        const address = (r.address || "").trim() || "—";
+        const comment = (r.comment || "").trim() || "—";
+        tr.innerHTML = `
+          <td>${fmtKST(r.ts)}</td>
+          <td>${escapeHtml(who)}</td>
+          <td>${choice}</td>
+          <td>${flower}</td>
+          <td>${escapeHtml(address)}</td>
+          <td>${escapeHtml(comment)}</td>`;
+        adminTbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, (m) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+    }
+
+    function loadResponses(){
+      if (!endpointReady()){
+        adminStatus.textContent = "ENDPOINT_URL을 설정하면 여기서 응답을 볼 수 있어요.";
+        return;
+      }
+      adminStatus.textContent = "불러오는 중...";
+      const cb = "__valListCb_" + Math.random().toString(16).slice(2);
+      window[cb] = (data) => {
+        if (data && data.error){
+          adminStatus.textContent = data.error;
+          renderResponses([]);
+        } else {
+          adminStatus.textContent = `총 ${Array.isArray(data) ? data.length : 0}개`;
+          renderResponses(Array.isArray(data) ? data : []);
+        }
+        cleanup();
+      };
+      const u = new URL(ENDPOINT_URL);
+      u.searchParams.set("action", "list");
+      if (fromName) u.searchParams.set("from", fromName);
+      if (ADMIN_KEY) u.searchParams.set("key", ADMIN_KEY);
+      u.searchParams.set("callback", cb);
+      const s = document.createElement("script");
+      s.src = u.toString();
+      s.onerror = () => { adminStatus.textContent = "불러오기 실패."; cleanup(); };
+      document.body.appendChild(s);
+      function cleanup(){
+        try{ delete window[cb]; }catch{}
+        if (s && s.parentNode) s.remove();
+      }
+    }
+
+    // --- Copy / share ---
     async function copyLink(){
       const shareUrl = buildShareURL();
       try{
@@ -465,7 +880,51 @@
     }
 
     copyBtn.addEventListener("click", copyLink);
-    copyBtn2.addEventListener("click", copyLink);
+
+    // --- 결과 공유하기: 선택 결과를 텍스트로 공유 ---
+    const shareStatus = document.getElementById("shareStatus");
+
+    function buildResultText(){
+      if (!finalResult) return "아직 결과가 없어요!";
+      const r = finalResult;
+      const who = r.to || "상대방";
+      const from = r.from ? ` (from ${r.from})` : "";
+      const choiceEmoji = r.choice === "yes" ? "💗 Yes" : "🙈 No";
+      const flowerText = r.flower === "yes" ? "🌹 받을게!" : "😅 괜찮아";
+      const lines = [
+        `💘 Valentine 결과${from}`,
+        ``,
+        `👤 ${who}의 대답:`,
+        `  선택: ${choiceEmoji}`,
+        `  꽃: ${flowerText}`,
+      ];
+      if (r.address) lines.push(`  주소: ${r.address}`);
+      if (r.comment) lines.push(`  코멘트: ${r.comment}`);
+      return lines.join("\n");
+    }
+
+    copyBtn2.addEventListener("click", async () => {
+      const text = buildResultText();
+
+      // Web Share API 지원 시 (모바일 등)
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Valentine 결과 💘", text });
+          shareStatus.textContent = "공유 완료! 💌";
+          return;
+        } catch(e) {
+          // 사용자가 취소했거나 실패 → 클립보드로 fallback
+        }
+      }
+
+      // 클립보드 복사 fallback
+      try {
+        await navigator.clipboard.writeText(text);
+        shareStatus.textContent = "결과가 클립보드에 복사됐어! 붙여넣기로 보내줘 📋";
+      } catch {
+        window.prompt("복사해서 보내기:", text);
+      }
+    });
 
     closeBtn.addEventListener("click", () => overlay.classList.remove("show"));
     overlay.addEventListener("click", (e) => {
@@ -481,7 +940,28 @@
       returnNoToCard();
     });
 
-    // Optional: if they explicitly type ?forceNo=1 to allow no immediately
+    // --- Admin mode ---
+    copyAdminBtn.addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(buildAdminURL());
+        adminStatus.textContent = "결과 링크 복사 완료!";
+      }catch{
+        window.prompt("복사해서 보관하기:", buildAdminURL());
+      }
+    });
+    refreshBtn.addEventListener("click", loadResponses);
+
+    if (ADMIN_MODE){
+      btnArea.style.display = "none";
+      if (actionRow) actionRow.style.display = "none";
+      if (footerNote) footerNote.style.display = "none";
+      adminPanel.hidden = false;
+      titleEl.textContent = `${fromName ? fromName + "의 " : ""}응답 보기 📋`;
+      badgeEl.textContent = fromName ? `from ${fromName} · admin` : "admin";
+      subtitle.textContent = "상대방이 남긴 선택, 꽃 수락, 주소, 코멘트를 확인할 수 있어요.";
+      loadResponses();
+    }
+
     if (params.get("forceNo") === "1"){
       noIsRunning = false;
       subtitle.textContent = "No도 가능! (forceNo=1)";
