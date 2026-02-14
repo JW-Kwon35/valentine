@@ -563,16 +563,17 @@
 
       document.body.appendChild(heart);
 
-      heart.animate([
-        { transform: "translateY(0) translateX(0) rotate(0deg)" },
-        { transform: `translateY(-140vh) translateX(${drift}vw) rotate(18deg)` }
-      ], {
-        duration: dur,
-        easing: "linear",
-        fill: "forwards"
-      });
-
-      setTimeout(() => heart.remove(), 17000);
+      const start = performance.now();
+      function tick(now){
+        const p = Math.min((now - start) / dur, 1);
+        const ty = -140 * p;
+        const tx = drift * p;
+        const r = 18 * p;
+        heart.style.transform = `translateY(${ty}vh) translateX(${tx}vw) rotate(${r}deg)`;
+        if (p < 1) requestAnimationFrame(tick);
+        else heart.remove();
+      }
+      requestAnimationFrame(tick);
     }
     setInterval(backgroundHearts, 700);
 
@@ -595,16 +596,17 @@
 
         document.body.appendChild(c);
 
-        c.animate([
-          { top: "-30px",  transform: `rotate(${rotStart}deg)` },
-          { top: "110vh",  transform: `rotate(${rotStart + 25}deg)` }
-        ], {
-          duration: dur,
-          easing: "linear",
-          fill: "forwards"
-        });
-
-        setTimeout(() => c.remove(), dur + 400);
+        const startTime = performance.now();
+        function tick(now){
+          const p = Math.min((now - startTime) / dur, 1);
+          const top = -30 + (window.innerHeight * 1.1 + 30) * p;
+          const rot = rotStart + 25 * p;
+          c.style.top = top + "px";
+          c.style.transform = `rotate(${rot}deg)`;
+          if (p < 1) requestAnimationFrame(tick);
+          else c.remove();
+        }
+        requestAnimationFrame(tick);
       }
     }
 
