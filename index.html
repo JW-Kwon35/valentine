@@ -575,7 +575,7 @@
     }
     setInterval(backgroundHearts, 700);
 
-    function confettiHearts(count=6){
+    function confettiHearts(count=30){
       const emojis = ["💗","💖","💘","💕","❤️","✨"];
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
@@ -779,7 +779,7 @@
         msg += `\n📮 주소도 잘 받았어!`;
       }
       modalText.textContent = msg;
-      confettiHearts(20);
+      confettiHearts(30);
     }
 
     function showNo(){
