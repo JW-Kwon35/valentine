@@ -575,46 +575,45 @@
     }
     setInterval(backgroundHearts, 700);
 
-    function confettiHearts(count=30){
-      const emojis = ["💗","💖","💘","💕","❤️"];
-      const vh = window.innerHeight;
+    function confettiHearts(count=6){
+      const emojis = ["💗","💖","💘","💕","❤️","✨"];
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
       const particles = [];
 
       for (let i=0; i<count; i++){
         const c = document.createElement("div");
         c.className = "confetti";
-        c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-        c.style.fontSize = (16 + Math.random()*26) + "px";
-        c.style.opacity = (0.65 + Math.random()*0.35).toFixed(2);
-        c.style.willChange = "transform";
+        c.textContent = emojis[i % emojis.length];
+        c.style.fontSize = (22 + Math.random()*12) + "px";
+        c.style.willChange = "transform, opacity";
         document.body.appendChild(c);
 
+        const angle = (Math.PI * 2 / count) * i + (Math.random()*0.4 - 0.2);
+        const dist = 120 + Math.random()*80;
+
         particles.push({
-          el: c,
-          x: Math.random() * window.innerWidth,
-          startY: -30 - Math.random()*40,
-          endY: vh * 1.1,
-          rot0: Math.random()*60 - 30,
-          dur: 2800 + Math.random()*2600,
+          el: c, angle, dist,
           born: performance.now()
         });
       }
 
+      const dur = 900;
       function tick(now){
         let alive = false;
         for (let i=0; i<particles.length; i++){
           const p = particles[i];
           if (!p) continue;
-          const t = Math.min((now - p.born) / p.dur, 1);
-          if (t < 1){
-            alive = true;
-            const y = p.startY + (p.endY - p.startY) * t;
-            const r = p.rot0 + 25 * t;
-            p.el.style.transform = `translate3d(${p.x}px,${y}px,0) rotate(${r}deg)`;
-          } else {
-            p.el.remove();
-            particles[i] = null;
-          }
+          const t = Math.min((now - p.born) / dur, 1);
+          // ease-out
+          const ease = 1 - (1-t)*(1-t);
+          const x = cx + Math.cos(p.angle) * p.dist * ease;
+          const y = cy + Math.sin(p.angle) * p.dist * ease;
+          const s = t < 0.3 ? t/0.3 : 1 - (t-0.3)/0.7;
+          p.el.style.transform = `translate3d(${x}px,${y}px,0) scale(${s})`;
+          p.el.style.opacity = s;
+          if (t < 1){ alive = true; }
+          else { p.el.remove(); particles[i] = null; }
         }
         if (alive) requestAnimationFrame(tick);
       }
@@ -780,7 +779,7 @@
         msg += `\n📮 주소도 잘 받았어!`;
       }
       modalText.textContent = msg;
-      confettiHearts(30);
+      confettiHearts(6);
     }
 
     function showNo(){
