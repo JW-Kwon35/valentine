@@ -35,13 +35,8 @@
       font-size:18px;
       opacity:.18;
       filter: blur(.1px);
-      animation: floatUp linear forwards;
       pointer-events:none;
       user-select:none;
-    }
-    @keyframes floatUp{
-      from { transform: translateY(0) translateX(0) rotate(0deg); }
-      to   { transform: translateY(-140vh) translateX(var(--drift)) rotate(18deg); }
     }
 
     main.card{
@@ -174,15 +169,8 @@
       left:0;
       pointer-events:none;
       user-select:none;
-      animation: fall var(--dur) linear forwards;
-      transform: translateX(var(--x)) rotate(var(--rot));
-      font-size: var(--size);
-      opacity: var(--op);
       z-index:60;
       filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
-    }
-    @keyframes fall{
-      to { top:110vh; transform: translateX(var(--x)) rotate(calc(var(--rot) + 25deg)); }
     }
 
     .note{
@@ -568,10 +556,22 @@
       heart.className = "bg-heart";
       heart.textContent = emojis[Math.floor(Math.random()*emojis.length)];
       heart.style.left = (Math.random() * 100) + "vw";
-      heart.style.setProperty("--drift", (Math.random()*40 - 20) + "vw");
-      heart.style.animationDuration = (8 + Math.random()*8) + "s";
       heart.style.fontSize = (14 + Math.random()*18) + "px";
+
+      const drift = (Math.random()*40 - 20);
+      const dur = (8 + Math.random()*8) * 1000;
+
       document.body.appendChild(heart);
+
+      heart.animate([
+        { transform: "translateY(0) translateX(0) rotate(0deg)" },
+        { transform: `translateY(-140vh) translateX(${drift}vw) rotate(18deg)` }
+      ], {
+        duration: dur,
+        easing: "linear",
+        fill: "forwards"
+      });
+
       setTimeout(() => heart.remove(), 17000);
     }
     setInterval(backgroundHearts, 700);
@@ -582,15 +582,29 @@
         const c = document.createElement("div");
         c.className = "confetti";
         c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-        const x = Math.random() * 100;
-        const dur = 2.8 + Math.random()*2.6;
-        c.style.setProperty("--x", x + "vw");
-        c.style.setProperty("--dur", dur + "s");
-        c.style.setProperty("--size", (16 + Math.random()*26) + "px");
-        c.style.setProperty("--rot", (Math.random()*60 - 30) + "deg");
-        c.style.setProperty("--op", (0.65 + Math.random()*0.35).toFixed(2));
+
+        const xVw = Math.random() * 100;
+        const dur = 2800 + Math.random()*2600;
+        const size = 16 + Math.random()*26;
+        const rotStart = Math.random()*60 - 30;
+        const op = 0.65 + Math.random()*0.35;
+
+        c.style.left = xVw + "vw";
+        c.style.fontSize = size + "px";
+        c.style.opacity = op;
+
         document.body.appendChild(c);
-        setTimeout(() => c.remove(), (dur*1000) + 400);
+
+        c.animate([
+          { top: "-30px",  transform: `rotate(${rotStart}deg)` },
+          { top: "110vh",  transform: `rotate(${rotStart + 25}deg)` }
+        ], {
+          duration: dur,
+          easing: "linear",
+          fill: "forwards"
+        });
+
+        setTimeout(() => c.remove(), dur + 400);
       }
     }
 
@@ -695,10 +709,12 @@
         from: fromName || ""
       };
 
-      await saveResponse(selectedChoice, collectedComment, collectedFlower, collectedAddress);
-
+      // 화면 먼저 보여주기 (딜레이 없이!)
       if (selectedChoice === "yes") showYes();
       else showNo();
+
+      // 저장은 백그라운드에서 (기다리지 않음)
+      saveResponse(selectedChoice, collectedComment, collectedFlower, collectedAddress);
 
       // reset
       selectedChoice   = null;
@@ -721,35 +737,19 @@
       };
 
       if (!endpointReady()){
-        const msg = [
-          `선택: ${choice.toUpperCase()}`,
-          `코멘트: ${comment || "(없음)"}`,
-          `꽃 수락: ${flower === "yes" ? "받을게!" : "괜찮아"}`,
-          `주소: ${address || "(미입력)"}`,
-          "",
-          "(ENDPOINT_URL을 설정하면 자동 저장됩니다.)"
-        ].join("\n");
-        try{ await navigator.clipboard.writeText(msg); }
-        catch{ window.prompt("보낸 사람에게 복사해서 보내기:", msg); }
+        // endpoint 미설정: 결과 공유하기 버튼에서 복사 가능하므로 여기선 조용히 패스
         return;
       }
 
       try{
-        await fetch(ENDPOINT_URL, {
+        fetch(ENDPOINT_URL, {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
       }catch{
-        const msg = [
-          `선택: ${choice.toUpperCase()}`,
-          `코멘트: ${comment || "(없음)"}`,
-          `꽃 수락: ${flower === "yes" ? "받을게!" : "괜찮아"}`,
-          `주소: ${address || "(미입력)"}`,
-          "(전송 실패)"
-        ].join("\n");
-        try{ await navigator.clipboard.writeText(msg); }catch{}
+        // 전송 실패해도 결과 공유하기 버튼으로 공유 가능
       }
     }
 
@@ -757,7 +757,16 @@
       const who = toName || "너";
       overlay.classList.add("show");
       modalTitle.textContent = "Yay!!! 💞";
-      modalText.textContent = `${who}랑 함께라서 완전 행복해 🥰`;
+      let msg = `${who}랑 함께라서 완전 행복해 🥰`;
+      if (finalResult && finalResult.flower === "yes"){
+        msg += `\n🌹 꽃도 보내줄게! 기다려!`;
+      } else {
+        msg += `\n꽃은 괜찮다고 했지? 알겠어! 😊`;
+      }
+      if (finalResult && finalResult.address){
+        msg += `\n📮 주소도 잘 받았어!`;
+      }
+      modalText.textContent = msg;
       confettiHearts(55);
     }
 
@@ -765,7 +774,16 @@
       const who = toName || "너";
       overlay.classList.add("show");
       modalTitle.textContent = "알겠어 😌";
-      modalText.textContent = `${who}의 마음도 존중할게. 그래도 고마워!`;
+      let msg = `${who}의 마음도 존중할게. 그래도 고마워!`;
+      if (finalResult && finalResult.flower === "yes"){
+        msg += `\n🌷 그래도 꽃은 보내줄게! 기다려!`;
+      } else {
+        msg += `\n꽃도 괜찮다니, 알겠어! 😊`;
+      }
+      if (finalResult && finalResult.address){
+        msg += `\n📮 주소도 잘 받았어!`;
+      }
+      modalText.textContent = msg;
     }
 
     // --- No button ---
