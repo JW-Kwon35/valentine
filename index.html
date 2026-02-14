@@ -590,7 +590,7 @@
         document.body.appendChild(c);
 
         const angle = (Math.PI * 2 / count) * i + (Math.random()*0.4 - 0.2);
-        const dist = 120 + Math.random()*80;
+        const dist = 200 + Math.random()*100;
 
         particles.push({
           el: c, angle, dist,
@@ -598,7 +598,7 @@
         });
       }
 
-      const dur = 900;
+      const dur = 1500;
       function tick(now){
         let alive = false;
         for (let i=0; i<particles.length; i++){
@@ -779,7 +779,7 @@
         msg += `\n📮 주소도 잘 받았어!`;
       }
       modalText.textContent = msg;
-      confettiHearts(6);
+      confettiHearts(20);
     }
 
     function showNo(){
